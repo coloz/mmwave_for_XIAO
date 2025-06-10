@@ -522,7 +522,7 @@ Seeed_HSP24::DataResult Seeed_HSP24::sendCommand(const byte *sendData, int sendD
             int endIndex = findSequence(buffer_hsp24, bufferIndex_hsp24, frameAskEnd, 4);
 
             // static uint8_t finalBuffer[128];
-            uint8_t *finalBuffer = nullptr;
+            uint8_t finalBuffer[(endIndex + 4) - startIndex];
             // 接收到完整帧
             if (startIndex != -1 && endIndex != -1 && endIndex > startIndex)
             {
@@ -552,7 +552,6 @@ Seeed_HSP24::DataResult Seeed_HSP24::sendCommand(const byte *sendData, int sendD
                     }
                 }
 
-                finalBuffer = new uint8_t[(endIndex + 4) - startIndex];
                 if (lastFrameStart != -1 && lastFrameEnd != -1 && lastFrameStart < lastFrameEnd)
                 {
                     int j = 0;
@@ -812,7 +811,7 @@ Seeed_HSP24::RadarStatus Seeed_HSP24::getConfig()
                 radarStatus.radarStaticPower.staticGate[j++] = dataResult.resultBuffer[i];
             }
 
-            int noTargrtduration = dataResult.resultBuffer[32] | (dataResult.resultBuffer[32] << 8);
+            int noTargrtduration = dataResult.resultBuffer[32] | (dataResult.resultBuffer[33] << 8);
             radarStatus.noTargrtduration = noTargrtduration;
 
             disableConfigMode();
