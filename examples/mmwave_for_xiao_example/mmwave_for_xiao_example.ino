@@ -2,13 +2,8 @@
 #error "XIAO nRF52840 please use the non-mbed-enable version."
 #endif
 
-// ESP32 系列使用 EspSoftwareSerial 库，其他平台使用标准 SoftwareSerial
 // ESP32 users: please install "EspSoftwareSerial" library from Arduino Library Manager
-#if defined(ESP32)
 #include <SoftwareSerial.h>
-#else
-#include <SoftwareSerial.h>
-#endif
 
 #include <mmwave_for_xiao.h>
 
