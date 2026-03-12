@@ -571,3 +571,46 @@ This is most likely because you did not modify the baud rate of the sensor. The 
 ### Q3: Why does the data stream lag for 1~2 seconds when using Demo2?
 
 This may be a normal phenomenon, the data flow in engineering mode is large, the soft serial port occupies the CPU to process the data is limited, so it will pause for a while every now and then.
+
+## ESP32 Software Serial Support
+
+This library supports ESP32 boards (XIAO ESP32C3, XIAO ESP32S3, XIAO ESP32C6, etc.) with both software serial and hardware serial.
+
+### Option 1: Software Serial (EspSoftwareSerial)
+
+ESP32 does not include the standard Arduino `SoftwareSerial` library. To use software serial on ESP32, you need to install the **EspSoftwareSerial** library:
+
+1. Open Arduino IDE, go to **Sketch > Include Library > Manage Libraries...**
+2. Search for **EspSoftwareSerial** and install it
+3. Or download it from: https://github.com/plerup/espsoftwareserial
+
+Once installed, you can use `SoftwareSerial` on ESP32 just like other platforms. See the `mmwave_for_xiao_esp32_softserial` example.
+
+```cpp
+#include <SoftwareSerial.h>  // Provided by EspSoftwareSerial on ESP32
+#include <mmwave_for_xiao.h>
+
+SoftwareSerial COMSerial(D2, D3);  // RX, TX
+Seeed_HSP24 xiao_config(COMSerial);
+```
+
+### Option 2: Hardware Serial (Recommended for ESP32)
+
+ESP32 has multiple hardware UARTs. Using hardware serial avoids the CPU overhead of software serial and provides more reliable communication. See the `mmwave_for_xiao_esp32_hardserial` example.
+
+```cpp
+#include <mmwave_for_xiao.h>
+
+#define RX_PIN D7
+#define TX_PIN D6
+
+Seeed_HSP24 xiao_config(Serial1);
+
+void setup() {
+  Serial1.begin(9600, SERIAL_8N1, RX_PIN, TX_PIN);
+}
+```
+
+:::tip
+For ESP32 boards, hardware serial is recommended for better stability and performance. The `Serial1` pins can be remapped to any available GPIO using `Serial1.begin(baud, config, rxPin, txPin)`.
+:::

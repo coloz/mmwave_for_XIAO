@@ -1,7 +1,6 @@
 #ifndef Seeed_HSP24_h
 #define Seeed_HSP24_h
 
-#include <SoftwareSerial.h> // 包括软件串口库
 #include <Arduino.h>
 
 #define BUFFER_SIZE 256     // 串口缓冲区大小

@@ -1,56 +1,67 @@
-#if defined(ARDUINO_SEEED_XIAO_NRF52840_SENSE) || defined(ARDUINO_SEEED_XIAO_NRF52840)
-#error "XIAO nRF52840 please use the non-mbed-enable version."
-#endif
+/*
+ * mmWave for XIAO - ESP32 Hardware Serial Example
+ *
+ * This example demonstrates using the mmWave sensor with ESP32 boards
+ * via hardware serial (no extra library needed). ESP32 has multiple
+ * hardware UARTs, which are more stable and efficient than software serial.
+ *
+ * Requirements:
+ *   - Set sensor baud rate to 9600 using HLKRadarTool APP before use
+ *
+ * Wiring (XIAO ESP32C3 / ESP32S3 / ESP32C6):
+ *   Sensor TX -> D7 (XIAO RX1, mapped to Serial1)
+ *   Sensor RX -> D6 (XIAO TX1, mapped to Serial1)
+ *
+ * Note: The default pins for Serial1 vary by board. Adjust RX_PIN and TX_PIN
+ *       below to match your wiring. On XIAO boards, D7/D6 are commonly used.
+ *
+ * Tested on: XIAO ESP32C3, XIAO ESP32S3, XIAO ESP32C6
+ */
 
-// ESP32 系列使用 EspSoftwareSerial 库，其他平台使用标准 SoftwareSerial
-// ESP32 users: please install "EspSoftwareSerial" library from Arduino Library Manager
-#if defined(ESP32)
-#include <SoftwareSerial.h>
-#else
-#include <SoftwareSerial.h>
+#if !defined(ESP32)
+#error "This example is for ESP32 boards only."
 #endif
 
 #include <mmwave_for_xiao.h>
 
-// Define the SoftwareSerial object, D2 as RX, D3 as TX, connect to the serial port of the mmwave sensor
-// ESP32: Make sure "EspSoftwareSerial" library is installed
-SoftwareSerial COMSerial(D2, D3);
+// Hardware Serial1 pin definitions - adjust for your board/wiring
+#define RX_PIN D7
+#define TX_PIN D6
 
-// Creates a global Serial object for printing debugging information
 #define ShowSerial Serial
 
-// Initialising the radar configuration
-Seeed_HSP24 xiao_config(COMSerial, ShowSerial);
-//Seeed_HSP24 xiao_config(COMSerial);
+// Initialize radar with hardware Serial1 and debug serial
+Seeed_HSP24 xiao_config(Serial1, ShowSerial);
 
 Seeed_HSP24::RadarStatus radarStatus;
 
 void setup() {
-  /* Be sure to change the baud rate for radar reporting to 9600 before using this routine, 
-  refer to the wiki: https://wiki.seeedstudio.com/mmwave_for_xiao_arduino/#xiao-example */
-  COMSerial.begin(9600);
+  // Initialize hardware Serial1 with custom pins
+  Serial1.begin(9600, SERIAL_8N1, RX_PIN, TX_PIN);
   ShowSerial.begin(115200);
+  delay(500);
 
+  ShowSerial.println("mmWave for XIAO - ESP32 HardwareSerial Example");
   ShowSerial.println("Programme Starting!");
 }
 
 void loop() {
   int retryCount = 0;
-  const int MAX_RETRIES = 10;  // Maximum number of retries to prevent infinite loops
+  const int MAX_RETRIES = 10;
 
-  //Get radar status
+  // Get radar status
   do {
     radarStatus = xiao_config.getStatus();
     retryCount++;
-//    ShowSerial.println(radarStatus.distance);
   } while (radarStatus.distance == -1 && retryCount < MAX_RETRIES);
 
-  //Parses radar status and prints results from debug serial port
+  // Parse and print radar status
   if (radarStatus.distance != -1) {
     ShowSerial.print("Status: " + String(targetStatusToString(radarStatus.targetStatus)) + "  ----   ");
     ShowSerial.println("Distance: " + String(radarStatus.distance) + "  Mode: " + String(radarStatus.radarMode));
-    ShowSerial.print("Move: ");
+
     if (radarStatus.radarMode == 1) {
+      ShowSerial.print("Move: ");
       for (int i = 0; i < 9; i++) {
         ShowSerial.print(String(radarStatus.radarMovePower.moveGate[i]) + "  ,");
       }
@@ -66,7 +77,6 @@ void loop() {
   delay(200);
 }
 
-// Parsing the acquired radar status
 const char* targetStatusToString(Seeed_HSP24::TargetStatus status) {
   switch (status) {
     case Seeed_HSP24::TargetStatus::NoTarget:

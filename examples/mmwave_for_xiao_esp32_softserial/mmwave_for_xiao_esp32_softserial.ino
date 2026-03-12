@@ -1,56 +1,63 @@
-#if defined(ARDUINO_SEEED_XIAO_NRF52840_SENSE) || defined(ARDUINO_SEEED_XIAO_NRF52840)
-#error "XIAO nRF52840 please use the non-mbed-enable version."
+/*
+ * mmWave for XIAO - ESP32 Software Serial Example
+ *
+ * This example demonstrates using the mmWave sensor with ESP32 boards
+ * via software serial (EspSoftwareSerial library).
+ *
+ * Requirements:
+ *   - Install "EspSoftwareSerial" library from Arduino Library Manager
+ *   - Set sensor baud rate to 9600 using HLKRadarTool APP before use
+ *
+ * Wiring:
+ *   Sensor TX -> D2 (XIAO RX)
+ *   Sensor RX -> D3 (XIAO TX)
+ *
+ * Tested on: XIAO ESP32C3, XIAO ESP32S3, XIAO ESP32C6
+ */
+
+#if !defined(ESP32)
+#error "This example is for ESP32 boards only. Use mmwave_for_xiao_example for other platforms."
 #endif
 
-// ESP32 系列使用 EspSoftwareSerial 库，其他平台使用标准 SoftwareSerial
-// ESP32 users: please install "EspSoftwareSerial" library from Arduino Library Manager
-#if defined(ESP32)
-#include <SoftwareSerial.h>
-#else
-#include <SoftwareSerial.h>
-#endif
-
+#include <SoftwareSerial.h>  // EspSoftwareSerial library
 #include <mmwave_for_xiao.h>
 
-// Define the SoftwareSerial object, D2 as RX, D3 as TX, connect to the serial port of the mmwave sensor
-// ESP32: Make sure "EspSoftwareSerial" library is installed
+// Software serial: D2 as RX, D3 as TX
 SoftwareSerial COMSerial(D2, D3);
 
-// Creates a global Serial object for printing debugging information
 #define ShowSerial Serial
 
-// Initialising the radar configuration
+// Initialize radar with communication serial and debug serial
 Seeed_HSP24 xiao_config(COMSerial, ShowSerial);
-//Seeed_HSP24 xiao_config(COMSerial);
 
 Seeed_HSP24::RadarStatus radarStatus;
 
 void setup() {
-  /* Be sure to change the baud rate for radar reporting to 9600 before using this routine, 
-  refer to the wiki: https://wiki.seeedstudio.com/mmwave_for_xiao_arduino/#xiao-example */
   COMSerial.begin(9600);
   ShowSerial.begin(115200);
+  delay(500);
 
+  ShowSerial.println("mmWave for XIAO - ESP32 SoftwareSerial Example");
   ShowSerial.println("Programme Starting!");
 }
 
 void loop() {
   int retryCount = 0;
-  const int MAX_RETRIES = 10;  // Maximum number of retries to prevent infinite loops
+  const int MAX_RETRIES = 10;
 
-  //Get radar status
+  // Get radar status
   do {
     radarStatus = xiao_config.getStatus();
     retryCount++;
-//    ShowSerial.println(radarStatus.distance);
   } while (radarStatus.distance == -1 && retryCount < MAX_RETRIES);
 
-  //Parses radar status and prints results from debug serial port
+  // Parse and print radar status
   if (radarStatus.distance != -1) {
     ShowSerial.print("Status: " + String(targetStatusToString(radarStatus.targetStatus)) + "  ----   ");
     ShowSerial.println("Distance: " + String(radarStatus.distance) + "  Mode: " + String(radarStatus.radarMode));
-    ShowSerial.print("Move: ");
+
     if (radarStatus.radarMode == 1) {
+      ShowSerial.print("Move: ");
       for (int i = 0; i < 9; i++) {
         ShowSerial.print(String(radarStatus.radarMovePower.moveGate[i]) + "  ,");
       }
@@ -66,7 +73,6 @@ void loop() {
   delay(200);
 }
 
-// Parsing the acquired radar status
 const char* targetStatusToString(Seeed_HSP24::TargetStatus status) {
   switch (status) {
     case Seeed_HSP24::TargetStatus::NoTarget:
